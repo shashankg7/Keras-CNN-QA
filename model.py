@@ -41,6 +41,7 @@ def load_embeddings(path, vocab):
 		try:
 			embedding[value] = word2vec[key]
 		except:
+			rand_vec = np.random.uniform(-0.25, 0.25, dim)
 			embedding[value] = rand_vec
 			rand_count += 1
 
@@ -52,11 +53,13 @@ def Model1(dim, max_ques_len, max_ans_len, vocab_lim, embedding):
 	inp_q = Input(shape=(max_ques_len,))
 	embedding_q  = Embedding(vocab_lim, dim, input_length=max_ques_len, weights=[embedding], trainable=False)(inp_q)
 	conv_q= Convolution1D(100, 5, border_mode='same', activation='relu')(embedding_q)
+	conv_q = Dropout(0.25)(conv_q)
 	pool_q = GlobalMaxPooling1D()(conv_q)
 
 	inp_a = Input(shape=(max_ans_len,))
 	embedding_a  = Embedding(vocab_lim, dim, input_length=max_ans_len, weights=[embedding], trainable=False)(inp_a)
 	conv_a = Convolution1D(100, 5, border_mode='same', activation='relu')(embedding_a)
+	conv_a = Dropout(0.25)(conv_a)
 	pool_a = GlobalMaxPooling1D()(conv_a)
 
 	#sim = SimLayer(1)([pool_q, pool_a])
@@ -74,12 +77,14 @@ def Model1(dim, max_ques_len, max_ans_len, vocab_lim, embedding):
 	print model_sim
 
 	# #model_final = Flatten()(model_sim)
-	model_final = Dense(201)(model_sim)
+	model_final = Dropout(0.5)(model_sim)
+	model_final = Dense(201)(model_final)
+	model_final = Dropout(0.5)(model_final)
 	model_final = Dense(1, activation='sigmoid')(model_final)
 
 	model = Model(input=[inp_q, inp_a], output=[model_final])
 	print(model.output_shape)
-	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+	model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['accuracy'])
 	print model.summary()
 	return model
 

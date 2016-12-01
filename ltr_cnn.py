@@ -6,11 +6,12 @@ import subprocess
 from collections import defaultdict
 import pdb, sys
 from sys import stdout
-from sklearn import metrics
+from sklearn import metrics, utils
 import numpy
 import json
 import tqdm
 from batch_generator import batch_gen
+
 from model import load_embeddings, Model1
 from alphabet import Alphabet
 
@@ -37,7 +38,7 @@ def map_score(qids, labels, preds):
 
 
 def train_model(dir):
-  mode = 'TRAIN'
+  mode = 'TRAIN-ALL'
   if len(sys.argv) > 1:
     mode = sys.argv[1]
     if not mode in ['TRAIN', 'TRAIN-ALL']:
@@ -75,6 +76,7 @@ def train_model(dir):
   #print(model.predict([q_train, a_train]))
   # start training
   for epoch in range(8):
+    q_train, a_train, y_train = utils.shuffle(q_train, a_train, y_train)
     for x_trainq, x_traina, y_train1 in zip(batch_gen(q_train, 50), batch_gen(a_train, 50), batch_gen(y_train, 50)):
       loss, acc = model.train_on_batch([x_trainq, x_traina], y_train1)
       perf = str(loss) + " " + str(acc)
